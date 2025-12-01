@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Редактировать заметку</title>
+	</head>
+	<body>
+		<h1>Редактирование заметки</h1>
+
+		<form action="{{ url_for('update_note', note_id=note.id) }}" method="post">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+			<label>Заголовок:</label><br />
+			<input
+				type="text"
+				name="title"
+				value="{{ note.title }}"
+				required
+			/><br /><br />
+
+			<label>Содержимое:</label><br />
+			<textarea name="content" required>{{ note.content }}</textarea
+			><br /><br />
+
+			<button type="submit">Сохранить</button>
+		</form>
+
+		<p><a href="{{ url_for('index') }}">Вернуться на главную</a></p>
+	</body>
+</html>
+

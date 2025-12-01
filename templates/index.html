@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Мои заметки</title>
+</head>
+<body>
+    <h1>Мои заметки</h1>
+    <p><a href="{{ url_for('logout') }}">Выйти</a></p>
+
+    <!-- Форма добавления заметки -->
+    <form action="{{ url_for('add_note') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <label>Заголовок:</label><br />
+        <input type="text" name="title" maxlength="100" required /><br /><br />
+
+        <label>Содержимое:</label><br />
+        <textarea name="content" maxlength="500" required></textarea><br /><br />
+
+        <button type="submit">Добавить</button>
+    </form>
+
+    <hr />
+    <h2>Все заметки:</h2>
+
+    <!-- Список заметок -->
+    <ul>
+        {% for note in notes %}
+        <li>
+            <b>{{ note.title | safe }}</b> — {{ note.created_at }}
+            <div>{{ note.content | safe }}</div>
+            <a href="{{ url_for('edit_note', note_id=note.id) }}">Редактировать</a> |
+            <a href="{{ url_for('delete_note', note_id=note.id) }}">Удалить</a>
+        </li>
+        {% else %}
+        <li>Заметок пока нет.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

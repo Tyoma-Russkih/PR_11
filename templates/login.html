@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Регистрация' if register else 'Вход' }}</title>
+</head>
+<body>
+    <h1>{{ 'Регистрация нового пользователя' if register else 'Вход в систему' }}</h1>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <label>Имя пользователя:</label><br>
+        <input type="text" name="username" required><br><br>
+
+        <label>Пароль:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <button type="submit">{{ 'Зарегистрироваться' if register else 'Войти' }}</button>
+    </form>
+
+    {% if register %}
+        <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
+    {% else %}
+        <p>Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a></p>
+    {% endif %}
+</body>
+</html>
