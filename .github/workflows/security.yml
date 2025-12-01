@@ -1,0 +1,85 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 0 * * 0'  # Еженедельно в воскресенье
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety flask
+        
+    # Проверка на наличие debug=True
+    - name: Check for debug mode
+      run: |
+        if grep -r "debug\s*=\s*True" app.py || \
+           grep -r "DEBUG\s*=\s*True" app.py || \
+           grep -r "app.run(debug=True)" app.py; then
+          echo "❌ КРИТИЧЕСКО: Обнаружен debug=True в production коде!"
+          exit 1
+        else
+          echo "✅ Debug mode не найден"
+        fi
+        
+    # Проверка на наличие секретов в коде
+    - name: Detect secrets in code
+      run: |
+        if grep -r "SECRET_KEY\s*=\s*['\"].*['\"]" app.py || \
+           grep -r "password\s*=\s*['\"].*['\"]" . --include="*.py" || \
+           grep -r "api_key\s*=\s*['\"].*['\"]" . --include="*.py"; then
+          echo "❌ Обнаружены возможные секреты в коде!"
+          echo "Перенесите SECRET_KEY в переменные окружения (.env файл)"
+          exit 1
+        else
+          echo "✅ Секреты не найдены в коде"
+        fi
+    
+    # Статический анализ безопасности Python кода
+    - name: Bandit Security Scan
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        if [ -f bandit-report.json ]; then
+          echo "Bandit report generated"
+        fi
+    
+    # Проверка уязвимостей в зависимостях
+    - name: Check dependencies for vulnerabilities
+      run: |
+        safety check || true
+        
+    # Проверка CSRF защиты
+    - name: Check CSRF protection
+      run: |
+        if ! grep -r "CSRFProtect" app.py || \
+           ! grep -r "csrf_token" templates/; then
+          echo "⚠️  ВНИМАНИЕ: CSRF защита может быть неполной"
+        else
+          echo "✅ CSRF защита обнаружена"
+        fi
+        
+    # Проверка SQLAlchemy использования
+    - name: Check SQL injection protection
+      run: |
+        if grep -r "execute(" . --include="*.py" || \
+           grep -r "raw(" . --include="*.py"; then
+          echo "⚠️  ПРЕДУПРЕЖДЕНИЕ: Возможны SQL инъекции"
+        else
+          echo "✅ SQLAlchemy используется безопасно"
+        fi
